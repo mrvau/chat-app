@@ -1,2 +1,28 @@
 node_modules
 .env
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+*.out
+
+# Misc
+sys.txt
+output.txt
+input.txt
+
+# IDE files
+.vscode/
+.idea/
+
+
+# Public uploads
+public/uploads/
