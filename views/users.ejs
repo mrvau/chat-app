@@ -24,49 +24,121 @@
           </tr>
         </thead>
         <tbody id="users-table">
-          <tr id="">
-            <td class="name">
-              <img src="./images/user1.png" />
-              <span>User 1</span>
-            </td>
-            <td>email@email.com</td>
-            <td class="manage">
-              <img src="./images/trash.png" alt="Delete" />
-            </td>
-          </tr>
+          <% users.forEach(function(user) { %>
+            <tr id="<%= user._id %>">
+              <td class="name">
+                <% if (user.avatar) { %>
+                  <img src="./uploads/avatars/<%= user.avatar %>" />
+                  <% } else { %>
+                    <img src="./images/nophoto.png" />
+                    <% } %>
+                      <span>
+                        <%= user.name %>
+                      </span>
+              </td>
+              <td>
+                <%= user.email %>
+              </td>
+              <td class="manage">
+                <img src="./images/trash.png" alt="Delete" onclick="deleteUser('<%= user._id %>')" />
+              </td>
+            </tr>
+            <% }); %>
         </tbody>
       </table>
     </div>
   </div>
 
-  <div class="modal-wrapper" id="add-user-modal">
-    <div class="modal">
-      <a href="#" onclick="closeModal()" class="modal-close">+</a>
-      <div class="modal-title">
-        <h2>Create New User</h2>
-      </div>
-      <div class="modal-body">
-        <form id="add-user-form">
-          <input type="text" placeholder="enter name" name="name" />
-          <p class="error show">This is error</p>
-          <input type="text" placeholder="enter email" name="email" />
-          <input type="text" placeholder="enter mobile" name="mobile" />
-          <input type="password" placeholder="enter password" name="password" />
-          <input type="file" name="avatar" />
-          <input type="submit" value="Submit" />
-        </form>
-      </div>
-    </div>
-  </div>
-  <script>
-    const modal = document.querySelector("#add-user-modal");
-    function closeModal() {
-      modal.style.display = "none";
-    }
-    function openModal() {
-      modal.style.display = "block";
-    }
-  </script>
-  </body>
+  <%- include("./partials/add-user-modal.ejs"); %>
+    <script>
+      const modal = document.querySelector("#add-user-modal");
+      const form = document.querySelector("#add-user-form");
 
-  </html>
+      const successToast = Toastify({
+        text: "User was added successfully! Reloading the list...",
+        duration: 3000,
+      })
+
+      const deleteToast = Toastify({
+        text: "User was removed successfully! Reloading the list...",
+        duration: 3000,
+      })
+
+      const deleteErrorToast = Toastify({
+        text: "Could not remove user!",
+        duration: 3000,
+      })
+
+      function closeModal() {
+        modal.style.display = "none";
+      }
+      function openModal() {
+        modal.style.display = "block";
+      }
+
+      async function deleteUser(userId) {
+        try {
+          const response = await fetch(`/users/${userId}`, {
+            method: "DELETE",
+          })
+
+          const result = await response.json();
+
+          if (result.errors) {
+            deleteErrorToast.showToast();
+          } else {
+            deleteToast.showToast();
+            document.getElementById(userId).remove();
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const errorPlaceholders = document.querySelectorAll("p.error");
+
+        for (const p of errorPlaceholders) {
+          p.style.display = "none";
+        }
+
+        const errorInput = document.querySelectorAll("input.error");
+
+        for (const input of errorInput) {
+          input.style.classList.remove("error")
+        }
+
+        const formData = new FormData(form);
+
+        const response = await fetch("/users", {
+          method: "POST",
+          body: formData
+        })
+
+        const result = await response.json();
+
+        if (result.errors) {
+          Object.keys(result.errors).forEach((fieldName) => {
+            form[fieldName].classList.add("error");
+
+            const errorPlaceholder = document.querySelector(`.${fieldName}-error`);
+            errorPlaceholder.textContent = result.errors[fieldName].msg;
+
+            errorPlaceholder.style.display = "block";
+          })
+        } else {
+          successToast.showToast();
+          closeModal();
+          document.querySelector("p.error").style.display = "none";
+
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+        }
+      }
+    </script>
+    </body>
+
+    </html>
